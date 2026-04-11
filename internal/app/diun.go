@@ -18,6 +18,7 @@ import (
 	kubernetesPrd "github.com/crazy-max/diun/v4/internal/provider/kubernetes"
 	nomadPrd "github.com/crazy-max/diun/v4/internal/provider/nomad"
 	swarmPrd "github.com/crazy-max/diun/v4/internal/provider/swarm"
+	"github.com/crazy-max/diun/v4/internal/web"
 	"github.com/crazy-max/gohealthchecks"
 	"github.com/dromara/carbon/v2"
 	"github.com/panjf2000/ants/v2"
@@ -34,6 +35,7 @@ type Diun struct {
 	grpc  *grpc.Client
 	hc    *gohealthchecks.Client
 	notif *notif.Client
+	web   *web.Server
 
 	cron   *cron.Cron
 	jobID  cron.EntryID
@@ -43,7 +45,7 @@ type Diun struct {
 }
 
 // New creates new diun instance
-func New(meta model.Meta, cfg *config.Config, grpcAuthority string) (*Diun, error) {
+func New(meta model.Meta, cfg *config.Config, grpcAuthority string, webAddr string) (*Diun, error) {
 	var err error
 
 	diun := &Diun{
@@ -67,6 +69,14 @@ func New(meta model.Meta, cfg *config.Config, grpcAuthority string) (*Diun, erro
 	diun.grpc, err = grpc.New(grpcAuthority, diun.db, diun.notif)
 	if err != nil {
 		return nil, err
+	}
+
+	if webAddr != "" {
+		var dockerCfg *model.PrdDocker
+		if cfg.Providers != nil {
+			dockerCfg = cfg.Providers.Docker
+		}
+		diun.web = web.New(webAddr, diun.db, dockerCfg)
 	}
 
 	if cfg.Watch.Healthchecks != nil {
@@ -101,6 +111,9 @@ func (di *Diun) Start() error {
 			log.Fatal().Err(err).Msg("Failed to start GRPC server")
 		}
 	}()
+
+	// Start web portal if configured
+	di.web.Start()
 
 	if *di.cfg.Watch.RunOnStartup {
 		di.Run()
@@ -198,6 +211,7 @@ func (di *Diun) Close() {
 		di.cron.Stop()
 	}
 	di.grpc.Stop()
+	di.web.Stop()
 	if err := di.db.Close(); err != nil {
 		log.Warn().Err(err).Msg("Cannot close database")
 	}

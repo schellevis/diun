@@ -22,6 +22,74 @@ a Docker registry.
 
 ![](.res/screenshot.png)
 
+## Web Portal
+
+Diun ships with an optional **web portal** that gives you a real-time overview of all watched
+container images and their update status.
+
+### Enabling the portal
+
+Pass the `--web-addr` flag (or set the `WEB_ADDR` environment variable) when starting Diun:
+
+```bash
+diun serve --web-addr :8080
+```
+
+With Docker:
+
+```yaml
+services:
+  diun:
+    image: ghcr.io/schellevis/diun:latest
+    environment:
+      WEB_ADDR: ":8080"
+    ports:
+      - "8080:8080"
+```
+
+The portal is then available at **http://localhost:8080**.
+
+### Features
+
+| Feature | Description |
+|---|---|
+| **Image status table** | Shows every watched image with its current status: ⬆ Update, ✦ New, ✔ Unchanged, — Skipped, ✖ Error |
+| **Sort by any column** | Click a column header to sort ascending/descending |
+| **Filter by status** | Dropdown to show only images with updates, or only unchanged images, etc. |
+| **Text search** | Live-filter by image name or tag |
+| **One-click rebuild** | For Docker containers with an available update, click **Rebuild** to pull the new image and recreate the container automatically |
+
+### Container Rebuild
+
+When Diun is running on the same host as the Docker daemon (or with access to the Docker socket),
+the **Rebuild** button in the portal will:
+
+1. Pull the latest image from the registry.
+2. Stop the running container.
+3. Remove the old container.
+4. Recreate it with the same configuration (volumes, environment variables, ports, networks).
+5. Start the new container.
+
+> **Note:** Rebuild works best for standalone `docker run` containers. For containers managed by
+> Docker Compose or an orchestrator, use the native update mechanism of that tool instead.
+
+You can also trigger a rebuild via the REST API:
+
+```bash
+curl -X POST http://localhost:8080/api/containers/<container_id>/rebuild
+```
+
+## Docker Image (GHCR)
+
+Images are automatically published to the GitHub Container Registry on every push to `master`
+and on each version tag:
+
+```bash
+docker pull ghcr.io/schellevis/diun:latest
+docker pull ghcr.io/schellevis/diun:edge    # latest master build
+docker pull ghcr.io/schellevis/diun:v4.x.y  # specific release
+```
+
 ## Documentation
 
 Documentation can be found on https://crazymax.dev/diun/
