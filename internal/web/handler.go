@@ -65,7 +65,7 @@ func (s *Server) handleAPIImages(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Sort: updates first, then new, then unchange, then others; within same status by name
+	// Sort: updates first, then new, then unchanged, then others; within same status by name
 	sort.Slice(entries, func(i, j int) bool {
 		pi := statusPriority(entries[i].Status)
 		pj := statusPriority(entries[j].Status)
