@@ -212,6 +212,12 @@ func (di *Diun) runJob(job model.Job) (entry model.NotifEntry) {
 	} else if updated {
 		entry.Status = model.ImageStatusUpdate
 		sublog.Info().Msg("Image update found")
+	} else if job.LocalDigest != "" && string(entry.Manifest.Digest) != "" && job.LocalDigest != string(entry.Manifest.Digest) {
+		entry.Status = model.ImageStatusOutdated
+		sublog.Info().
+			Str("local_digest", job.LocalDigest).
+			Str("registry_digest", string(entry.Manifest.Digest)).
+			Msg("Container is running outdated image")
 	} else {
 		entry.Status = model.ImageStatusUnchange
 		sublog.Debug().Msg("No changes")

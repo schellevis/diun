@@ -32,6 +32,7 @@ const (
 	ImageStatusNew      = ImageStatus("new")
 	ImageStatusUpdate   = ImageStatus("update")
 	ImageStatusUnchange = ImageStatus("unchange")
+	ImageStatusOutdated = ImageStatus("outdated")
 	ImageStatusSkip     = ImageStatus("skip")
 	ImageStatusError    = ImageStatus("error")
 )
@@ -41,8 +42,9 @@ type ImageStatus string
 
 // NotifyOn constants
 const (
-	NotifyOnNew    = NotifyOn(ImageStatusNew)
-	NotifyOnUpdate = NotifyOn(ImageStatusUpdate)
+	NotifyOnNew      = NotifyOn(ImageStatusNew)
+	NotifyOnUpdate   = NotifyOn(ImageStatusUpdate)
+	NotifyOnOutdated = NotifyOn(ImageStatusOutdated)
 )
 
 // NotifyOn holds notify status type
@@ -52,6 +54,7 @@ type NotifyOn string
 var NotifyOnDefaults = []NotifyOn{
 	NotifyOnNew,
 	NotifyOnUpdate,
+	NotifyOnOutdated,
 }
 
 // Valid checks notify status is valid

@@ -6,19 +6,20 @@ import (
 
 // Defaults used for notification template
 const (
-	NotifDefaultTemplateTitle = `{{ .Entry.Image }} {{ if (eq .Entry.Status "new") }}is available{{ else }}has been updated{{ end }}`
-	NotifDefaultTemplateBody  = `Docker tag {{ if .Entry.Image.HubLink }}[**{{ .Entry.Image }}**]({{ .Entry.Image.HubLink }}){{ else }}**{{ .Entry.Image }}**{{ end }} which you subscribed to through {{ .Entry.Provider }} provider {{ if (eq .Entry.Status "new") }}is available{{ else }}has been updated{{ end }} on {{ .Entry.Image.Domain }} registry (triggered by {{ .Meta.Hostname }} host).`
+	NotifDefaultTemplateTitle = `{{ .Entry.Image }} {{ if (eq .Entry.Status "new") }}is available{{ else if (eq .Entry.Status "outdated") }}is outdated{{ else }}has been updated{{ end }}`
+	NotifDefaultTemplateBody  = `Docker tag {{ if .Entry.Image.HubLink }}[**{{ .Entry.Image }}**]({{ .Entry.Image.HubLink }}){{ else }}**{{ .Entry.Image }}**{{ end }} which you subscribed to through {{ .Entry.Provider }} provider {{ if (eq .Entry.Status "new") }}is available{{ else if (eq .Entry.Status "outdated") }}is outdated (container is running an older image than the registry){{ else }}has been updated{{ end }} on {{ .Entry.Image.Domain }} registry (triggered by {{ .Meta.Hostname }} host).`
 )
 
 // NotifEntries represents a list of notification entries
 type NotifEntries struct {
-	Entries       []NotifEntry
-	CountNew      int
-	CountUpdate   int
-	CountUnchange int
-	CountSkip     int
-	CountError    int
-	CountTotal    int
+	Entries        []NotifEntry
+	CountNew       int
+	CountUpdate    int
+	CountUnchange  int
+	CountOutdated  int
+	CountSkip      int
+	CountError     int
+	CountTotal     int
 }
 
 // NotifEntry represents a notification entry
@@ -73,6 +74,9 @@ func (s *NotifEntries) Add(entry NotifEntry) {
 		s.CountTotal++
 	case ImageStatusUnchange:
 		s.CountUnchange++
+		s.CountTotal++
+	case ImageStatusOutdated:
+		s.CountOutdated++
 		s.CountTotal++
 	case ImageStatusSkip:
 		s.CountSkip++
