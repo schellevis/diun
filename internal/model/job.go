@@ -12,4 +12,5 @@ type Job struct {
 	Registry        *registry.Client
 	FirstCheck      bool
 	HubLinkOverride string
+	LocalDigest     string // registry digest of the image the container is currently running (Docker provider only)
 }

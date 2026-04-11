@@ -32,18 +32,19 @@ func (c *Client) ListJob() []model.Job {
 		return []model.Job{}
 	}
 
-	images := c.listContainerImage()
-	if len(images) == 0 {
+	jobs := c.listContainerJob()
+	if len(jobs) == 0 {
 		log.Warn().Msg("No image found")
 		return []model.Job{}
 	}
 
-	c.logger.Info().Msgf("Found %d image(s) to analyze", len(images))
+	c.logger.Info().Msgf("Found %d image(s) to analyze", len(jobs))
 	var list []model.Job
-	for _, image := range images {
+	for _, j := range jobs {
 		list = append(list, model.Job{
-			Provider: "docker",
-			Image:    image,
+			Provider:    "docker",
+			Image:       j.image,
+			LocalDigest: j.localDigest,
 		})
 	}
 

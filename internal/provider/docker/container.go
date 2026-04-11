@@ -14,7 +14,14 @@ import (
 	"github.com/docker/go-units"
 )
 
-func (c *Client) listContainerImage() []model.Image {
+// containerJob holds a discovered container image together with the registry
+// digest of the image that the container is currently running.
+type containerJob struct {
+	image       model.Image
+	localDigest string
+}
+
+func (c *Client) listContainerJob() []containerJob {
 	cli, err := docker.New(docker.Options{
 		Endpoint:    c.config.Endpoint,
 		APIVersion:  c.config.APIVersion,
@@ -23,7 +30,7 @@ func (c *Client) listContainerImage() []model.Image {
 	})
 	if err != nil {
 		c.logger.Error().Err(err).Msg("Cannot create Docker client")
-		return []model.Image{}
+		return []containerJob{}
 	}
 	defer cli.Close()
 
@@ -37,10 +44,10 @@ func (c *Client) listContainerImage() []model.Image {
 	ctns, err := cli.ContainerList(ctnFilter)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("Cannot list Docker containers")
-		return []model.Image{}
+		return []containerJob{}
 	}
 
-	var list []model.Image
+	var list []containerJob
 	for _, ctn := range ctns {
 		imageName := ctn.Image
 		imageInfo, err := cli.ImageInspect(imageName)
@@ -109,10 +116,32 @@ func (c *Client) listContainerImage() []model.Image {
 			continue
 		}
 
-		list = append(list, image)
+		// Inspect the exact image the container is running (by image ID) to
+		// obtain its registry digest. This may differ from imageInfo when the
+		// tag has been re-pulled locally but the container has not been
+		// restarted yet.
+		localDigest := ""
+		if runningInfo, err := cli.ImageInspect(ctn.ImageID); err == nil {
+			localDigest = repoDigestValue(runningInfo.RepoDigests)
+		}
+
+		list = append(list, containerJob{image: image, localDigest: localDigest})
 	}
 
 	return list
+}
+
+// repoDigestValue extracts the bare digest (e.g. "sha256:abc…") from the
+// first entry in a RepoDigests slice (format: "name@sha256:digest").
+func repoDigestValue(repoDigests []string) string {
+	if len(repoDigests) == 0 {
+		return ""
+	}
+	parts := strings.SplitN(repoDigests[0], "@", 2)
+	if len(parts) == 2 {
+		return parts[1]
+	}
+	return ""
 }
 
 func metadata(ctn container.Summary) map[string]string {
