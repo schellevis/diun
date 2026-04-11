@@ -23,6 +23,7 @@ type ServeCmd struct {
 	LogCaller     bool   `name:"log-caller" env:"LOG_CALLER" default:"false" help:"Add file:line of the caller to log output."`
 	LogNoColor    bool   `name:"log-nocolor" env:"LOG_NOCOLOR" default:"false" help:"Disables the colorized output."`
 	GRPCAuthority string `name:"grpc-authority" env:"GRPC_AUTHORITY" default:":42286" help:"Address used to expose the gRPC server."`
+	WebAddr       string `name:"web-addr" env:"WEB_ADDR" default:"" help:"Address (host:port) to expose the web portal (e.g. :8080). Leave empty to disable."`
 }
 
 func (s *ServeCmd) Run(ctx *Context) error {
@@ -84,7 +85,7 @@ func (s *ServeCmd) Run(ctx *Context) error {
 	}
 
 	// Init
-	diun, err = app.New(ctx.Meta, cfg, s.GRPCAuthority)
+	diun, err = app.New(ctx.Meta, cfg, s.GRPCAuthority, s.WebAddr)
 	if err != nil {
 		log.Fatal().Err(err).Msgf("Cannot initialize %s", ctx.Meta.Name)
 	}

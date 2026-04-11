@@ -222,6 +222,10 @@ func (di *Diun) runJob(job model.Job) (entry model.NotifEntry) {
 		return
 	}
 	sublog.Debug().Msg("Manifest saved to database")
+
+	// Update web portal status
+	di.web.UpdateStatus(entry)
+
 	if entry.Status == model.ImageStatusUnchange {
 		return
 	}
