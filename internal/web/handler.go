@@ -109,7 +109,9 @@ func (s *Server) handleAPIContainers(w http.ResponseWriter, r *http.Request) {
 	cli, err := s.newDockerClient()
 	if err != nil {
 		log.Error().Err(err).Msg("Cannot create Docker client for rebuild")
-		http.Error(w, "cannot connect to Docker: "+err.Error(), http.StatusServiceUnavailable)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		_ = json.NewEncoder(w).Encode(map[string]string{"message": "cannot connect to Docker: " + err.Error()})
 		return
 	}
 	defer cli.Close()
@@ -117,7 +119,9 @@ func (s *Server) handleAPIContainers(w http.ResponseWriter, r *http.Request) {
 	newID, err := cli.RebuildContainer(containerID)
 	if err != nil {
 		log.Error().Err(err).Str("container", containerID).Msg("Container rebuild failed")
-		http.Error(w, "rebuild failed: "+err.Error(), http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]string{"message": "rebuild failed: " + err.Error()})
 		return
 	}
 
